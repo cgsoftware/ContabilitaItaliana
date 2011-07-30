@@ -1,7 +1,7 @@
 # -*- encoding: utf-8 -*-
 ##############################################################################
 #    
-#    Copyright (C) 2009 Domsense SRL (<http://www.domsense.com>). 
+#    Copyright (C) g&g software sas (<http://www.cgsoftware.it>). 
 #    All Rights Reserved
 #    $Id$
 #
@@ -20,7 +20,8 @@
 #
 ##############################################################################
 
-import RegistriProgressivi
-import DocumentiIva
+import DocEmessiRiceuti
+
+
 
 

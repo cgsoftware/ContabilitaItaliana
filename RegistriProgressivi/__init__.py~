@@ -20,7 +20,12 @@
 #
 ##############################################################################
 
-import RegistriProgressivi
-import DocumentiIva
+import base_partner_sequence
+import ItalianFiscalDocument
+import product_change_percent_price
+import product_default_type
+import SaleRequiredPayment
+
+
 
 

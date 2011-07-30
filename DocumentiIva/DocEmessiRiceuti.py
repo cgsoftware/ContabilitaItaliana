@@ -18,19 +18,21 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 ##############################################################################
-{
-    'name': 'Verticalizzazione C & G Software',
-    'version': '1.0',
-    'category': 'Generic Modules/Base',
-    'description': """
-     Modifche Specifiche per la gestione della Contabilità
-    """,
-    'author': 'C & G Software',
-    "depends" : ['base', 'account'],
-    "update_xml" : [
-                    ],
-    'website': 'http://www.cgsoftware.it',
-    'installable': True,
-    'active': False,
-}
-# vim:expandtab:smartindent:tabstop=4:softtabstop=4:shiftwidth=4:
+
+import time
+from datetime import datetime
+from dateutil.relativedelta import relativedelta
+from operator import itemgetter
+
+import netsvc
+import pooler
+from osv import fields, osv
+import decimal_precision as dp
+from tools.translate import _
+
+
+
+
+
+
+
