@@ -23,7 +23,6 @@ import time
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
 from operator import itemgetter
-
 import netsvc
 import pooler
 from osv import fields, osv

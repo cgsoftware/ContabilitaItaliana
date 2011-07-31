@@ -49,41 +49,15 @@ class account_journal(osv.osv):
                                                     ('N', 'No  Documenti')
                                                     ], 'Tipo Documento Iva', size=32, required=True,),
                 'liquidazione': fields.boolean('Stampa Liquidazione', help="Registro su cui si stampa la Liquidazione"),
-
                                          }
                                          
 account_journal()
-
-class account_fiscalyear_iva(osv.osv):
-    _name = 'account.fiscalyear.iva'
-    _description = ' Altri dati iva legati al esercizio contabile'
-    _columns = {
-                'fiscalyear_id': fields.many2one('account.fiscalyear', 'Fiscal Year', required=True, states={'done':[('readonly', True)]}, select=True),
-                'tipo_liquidazione': fields.selection([('M', 'Mensile'),
-                                                    ('T', 'Trimestrale'),
-                                                 ], 'Tipo Registro Iva', size=15, required=True,),
-                'plafond_iniziale': fields.float('Plafond Iva Inizio Anno', digits_compute=dp.get_precision('Account')),
-                'plafond_residuo': fields.float('Plafond Iva Residuo', digits_compute=dp.get_precision('Account')),
-                'credito_iva_iniziale': fields.float('Credito Iva Inizio Anno', digits_compute=dp.get_precision('Account')),
-                'debito_iva_27': fields.float('Debito Iva Art.27-33', digits_compute=dp.get_precision('Account')),
-                'percentuale_prorata': fields.float('Percentuale prorata', digits=(7, 3)),
-                'maggiorazione_trimestrale': fields.float('% Maggiorrazione iva Trimestrale', digits=(7, 3)),
-                'perc_acconto_iva': fields.float('% Acconto Iva', digits=(7, 3)),
-                'acconto_iva': fields.float('Acconto iva di Dicembre', digits_compute=dp.get_precision('Account')),
-                'versamento_minimo': fields.float('Versamento Minimo', digits_compute=dp.get_precision('Account')),
-                }
-    
-    
-
-
-account_fiscalyear_iva()
-
 
 class account_fiscalyear_iva_crediti(osv.osv):
     _name = 'account.fiscalyear.iva.crediti'
     _description = ' Utilizzi del credito iva di inizio anno'
     _columns = {
-                'fiscalyear_iva_id': fields.many2one('account.fiscalyear.iva', 'Fiscal Year', required=True, select=True),
+                'fiscalyear_id': fields.many2one('account.fiscalyear', 'Fiscal Year', required=True, select=True),
                 'data_utilizzo':fields.date('Data Utilizzo', required=True),
                 'tipo_utilizzo':fields.selection([
                                                   ('F24', 'Utilizzo in F24'),
@@ -94,33 +68,6 @@ class account_fiscalyear_iva_crediti(osv.osv):
     
 
 account_fiscalyear_iva_crediti()
-
-class account_journal_period(osv.osv):
-    _inherit = 'account.journal.period'
-    ''' Aggiunge sul periodo del registro l'ultima pagina per il libro giornale, l'ultima riga ed i progressivi del periodo e
-     se registro iva si segna tutti i dati  progressivi per codice iva. Anche il calcolo della liquidazione si aggiorna automaticamente alla 
-     stampa della liquidazione stessa
-     
-     '''
-    _columns = {
-               'tipo_registro': fields.related('jurnal_id', 'tipo_registro', string='Tipo Registro', type='many2one', relation='account.journal'),
-               'tipo_documento': fields.related('jurnal_id', 'tipo_documento', string='Tipo Documento', type='many2one', relation='account.journal'),
-               'ultima_pagina': fields.float('ultima pagina stampata', digits=(7, 0)),
-               'ultima_riga_tipog':fields.float('ultima riga stampata', digits=(7, 0), help='Ultima riga Stampata sul libro Giornale'),
-               'totale_dare': fields.float('Toatle Dare', help='Totale del Periodo Libro Giornale', digits_compute=dp.get_precision('Account')),
-               'totale_avere': fields.float('Totale Avere', help='Totale del Periodo Libro Giornale', digits_compute=dp.get_precision('Account')),
-               'data_ultima_riga': fields.date('Data ultima Riga', help='Data dell ultima riga stampata del periodo', required=False),
-               'data_ultima_stampa': fields.date('Data ultima Riga', help='Data dell ultima stampa e quindi del calcolo dei progressivi del periodo', required=False),
-               'data_versamento': fields.date('Data Versamento', help='Data dell eventuale versamento, solo sul registro di liquidazione', required=False),
-               'banca_versamento':fields.many2one('res.partner.bank', 'Banca di Versamento', required=False, help="Banca del Azienda "),
-               'importo_iva_credito': fields.float('Iva a Credito', help='Importo iva a Credito Calcolata nel periodo', digits_compute=dp.get_precision('Account')),
-               'importo_iva_dovuta': fields.float('Iva a dovuta', help='Importo iva a Dovuta Calcolata nel periodo', digits_compute=dp.get_precision('Account')),
-               
-                }
-    
-
-account_journal_period()
-
 
 class progressivi_iva_period(osv.osv):
     _name = 'progressivi.iva.period'
@@ -136,6 +83,57 @@ class progressivi_iva_period(osv.osv):
 progressivi_iva_period()
 
 
+class account_journal_period(osv.osv):
+    _inherit = 'account.journal.period'
+    ''' Aggiunge sul periodo del registro l'ultima pagina per il libro giornale, l'ultima riga ed i progressivi del periodo e
+     se registro iva si segna tutti i dati  progressivi per codice iva. Anche il calcolo della liquidazione si aggiorna automaticamente alla 
+     stampa della liquidazione stessa
+     
+     '''
+    _columns = {
+               'tipo_registro': fields.related('journal_id', 'tipo_registro', string='Tipo Registro', type='many2one', relation='account.journal'),
+               'tipo_documento': fields.related('journal_id', 'tipo_documento', string='Tipo Documento', type='many2one', relation='account.journal'),
+               'ultima_pagina': fields.float('ultima pagina stampata', digits=(7, 0)),
+               'ultima_riga_tipog':fields.float('ultima riga stampata', digits=(7, 0), help='Ultima riga Stampata sul libro Giornale'),
+               'totale_dare': fields.float('Toatle Dare', help='Totale del Periodo Libro Giornale', digits_compute=dp.get_precision('Account')),
+               'totale_avere': fields.float('Totale Avere', help='Totale del Periodo Libro Giornale', digits_compute=dp.get_precision('Account')),
+               'data_ultima_riga': fields.date('Data ultima Riga', help='Data dell ultima riga stampata del periodo', required=False),
+               'data_ultima_stampa': fields.date('Data ultima Riga', help='Data dell ultima stampa e quindi del calcolo dei progressivi del periodo', required=False),
+               'data_versamento': fields.date('Data Versamento', help='Data dell eventuale versamento, solo sul registro di liquidazione', required=False),
+               'banca_versamento':fields.many2one('res.partner.bank', 'Banca di Versamento', required=False, help="Banca del Azienda "),
+               'importo_iva_credito': fields.float('Iva a Credito', help='Importo iva a Credito Calcolata nel periodo', digits_compute=dp.get_precision('Account')),
+               'importo_iva_dovuta': fields.float('Iva a dovuta', help='Importo iva a Dovuta Calcolata nel periodo', digits_compute=dp.get_precision('Account')),
+               'righe_progressivi_iva': fields.one2many('progressivi.iva.period', 'period_registro_id', 'Righe Progressivi Iva', required=True),
+                }
+    
+
+account_journal_period()
+
+
+
+
+class account_fiscalyear(osv.osv):
+    _inherit = "account.fiscalyear"
+    _columns = {
+
+
+                'tipo_liquidazione': fields.selection([('M', 'Mensile'),
+                                                    ('T', 'Trimestrale'),
+                                                 ], 'Tipo Registro Iva', size=15, required=True,),
+                'plafond_iniziale': fields.float('Plafond Iva Inizio Anno', digits_compute=dp.get_precision('Account')),
+                'plafond_residuo': fields.float('Plafond Iva Residuo', digits_compute=dp.get_precision('Account')),
+                'credito_iva_iniziale': fields.float('Credito Iva Inizio Anno', digits_compute=dp.get_precision('Account')),
+                'debito_iva_27': fields.float('Debito Iva Art.27-33', digits_compute=dp.get_precision('Account')),
+                'percentuale_prorata': fields.float('Percentuale prorata', digits=(7, 3)),
+                'maggiorazione_trimestrale': fields.float('% Maggiorrazione iva Trimestrale', digits=(7, 3)),
+                'perc_acconto_iva': fields.float('% Acconto Iva', digits=(7, 3)),
+                'acconto_iva': fields.float('Acconto iva di Dicembre', digits_compute=dp.get_precision('Account')),
+                'versamento_minimo': fields.float('Versamento Minimo', digits_compute=dp.get_precision('Account')),
+                'righe_utilizzi_crediti': fields.one2many('account.fiscalyear.iva.crediti', 'fiscalyear_id', 'Righe Utlizzi Crediti', required=True),
+                }
+
+account_fiscalyear()                
+                
 
 
 

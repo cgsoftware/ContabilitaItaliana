@@ -28,6 +28,8 @@
     'author': 'C & G Software',
     "depends" : ['base', 'account'],
     "update_xml" : [
+                    'security/ir.model.access.csv',
+                    'RegistriProgressivi/RegistriProgressivi_view.xml',
                     ],
     'website': 'http://www.cgsoftware.it',
     'installable': True,

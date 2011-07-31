@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="utf-8"?>
+<openerp>
+    <data>
+      <!-- DATI SULLA DEFINIZIONE DEL REGISTRO -->
+          <record model="ir.ui.view" id="account_journal_dativa">
+            <field name="name">account.journal.dativa"</field>
+            <field name="model">account.journal</field>
+            <field name="inherit_id" ref="account.view_account_journal_form"/>
+                <field name="arch" type="xml">
+	                <notebook position="inside">        
+				  <page string="Dati Impostazione e Iva">
+					<separator string="Dati Tipo Registro Iva" colspan="8" />				  
+					<field name="tipo_registro"/>
+					<field name="tipo_documento" />
+					<field name="liquidazione" />
+				  </page>
+			</notebook>
+
+		  </field>
+        </record>
+	
+	 <!-- DATI SULLA DEFINIZIONE DELL' ANNO FISCALE -->
+	
+          <record model="ir.ui.view" id="account_fyscalyear_dativa">
+            <field name="name">account.fyscalyear.dativa"</field>
+            <field name="model">account.fiscalyear</field>
+            <field name="inherit_id" ref="account.view_account_fiscalyear_form"/>
+                <field name="arch" type="xml">
+		   <field name="period_ids" position="after">
+					<separator string="Dati Iva Annuali " colspan="8" />				  
+					<field name="tipo_liquidazione"/>
+					<field name="plafond_iniziale" />
+					<field name="plafond_residuo" />
+					<field name="credito_iva_iniziale" />
+					<field name="debito_iva_27" />										
+					<field name="percentuale_prorata" />
+					<field name="maggiorazione_trimestrale" />
+					<field name="perc_acconto_iva" />
+					<field name="acconto_iva" />					
+					<field name="versamento_minimo" />							
+				    <separator string="Utilizzo Crediti Iva " colspan="8" />
+	                		<field name="righe_utilizzi_crediti" nolabel="1" mode="tree,form" string="Crediti Utilizzati">
+	                			<tree editable="top">
+	                				<field name="data_utilizzo"  />
+	                				<field name="tipo_utilizzo" />
+	                				<field name="importo_utilizzato" />	                				
+	                			</tree>
+	                			<form>
+	                				<field name="data_utilizzo"  />
+	                				<field name="tipo_utilizzo" />
+	                				<field name="importo_utilizzato" />	                				
+	                			</form>
+	                		</field>
+		      </field>
+
+		  </field>
+        </record>
+	
+	 <!-- DATI PROGRESSIVI PERIODI REGISTRI IVA E LIBRO GIORNALE -->	
+        
+          <record id="view_journal_period_form" model="ir.ui.view">
+	    
+            <field name="name">journal.period.form </field>
+            <field name="model">account.journal.period </field>
+	    <field name="type">form</field>
+            <field name="arch" type="xml" >
+	      
+                <form  string="Progressivi Registri e Libro Giornale" >
+		  
+		  
+                    <group col="6" colspan="4">
+                        <field name="fiscalyear_id"  select="1"/>
+                        <field name="period_id" select = "1"/>			
+                        <field name="journal_id" select="1"/>
+                        <field name="name"  select="1"/>           
+                    </group>
+		    
+                    <group col="6" colspan="4" String = "Dati Stampa ">
+		<separator string="Dati di Stampa"  />
+		        <field name="tipo_registro"  select="1"/>
+                        <field name="tipo_documento" />			
+                        <field name="ultima_pagina" />
+                        <field name="ultima_riga_tipog"  />           
+                        <field name="totale_dare"  />           
+                        <field name="totale_avere"/>           			
+			<field name="data_ultima_riga"/>           			
+			<field name="data_ultima_stampa"/>           			        			
+                    </group>
+		    
+                    <group col="6" colspan="4" String = "Dati Liquidazione ">
+                        <field name="data_versamento" />
+                        <field name='company_id' invisible="True"  />
+                        <field name='banca_versamento'  domain="[('partner_id', '=', company_id)]"  />  
+ 			
+                        <field name="banca_versamento" />			
+                        <field name="importo_iva_credito" />
+                        <field name="importo_iva_dovuta"  />  
+			<field name="righe_progressivi_iva" nolabel="1" mode="tree" string="Progressivi Codici Iva" >
+			  
+	                	<tree editable="top">
+	                		<field name="codice_iva"  />
+	                		<field name="totale_imponibile" />
+	                		<field name="totale_imposta" />	                				
+	                	</tree>
+								
+	                </field>
+			
+                    </group>
+ 		</form>
+	      
+            </field>
+	    
+        </record>
+
+        <record id="action_periodi_progressivi_iva" model="ir.actions.act_window">
+            <field name="name">Progressivi Periodi Registri</field>
+            <field name="type">ir.actions.act_window</field>
+            <field name="res_model">account.journal.period</field>
+	    <field name="view_mode">tree,form</field>
+        </record>
+	
+        <menuitem action="action_periodi_progressivi_iva" 
+	          id="menu_periodi_registri" 
+		  parent="account_template_taxes" sequence="4" />
+</data>
+    
+    
+</openerp>
