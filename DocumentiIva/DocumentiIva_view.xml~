@@ -15,13 +15,13 @@
 	                				<field name="type"  />
 	                				<field name="sequence" size='10'/>
 	                				<field name="account_id" />
-									<field name="codice_iva" />	      	                					                				
+							<field name="codice_iva" />	      	                					                				
 	                			</tree>
 	                			<form>
 	                				<field name="type"  />
 	                				<field name="sequence" size='10'/>
 	                				<field name="account_id" />
-							<field name="codice_iva" />	      	                					                				
+							<field name="codice_iva" />			
                 			</form>
 	                		</field>
 				  </page>
@@ -74,20 +74,18 @@
         </record>
 
 	<record model="ir.ui.view" id="account_it_invoice2">
+	  
             <field name="name">account.it.invoice2</field>
             <field name="model">account.invoice</field>
             <field name="inherit_id" ref="l10n_it_sale.invoice_form_inherit_contractual_conditions"/>
                 <field name="arch" type="xml">
- 
 		<page string="Shipping" position="replace">	
-		      
 		    </page>
-
-		
-
  		</field>
         </record>
-		  
+	
+		<!-- MODIFICHE CORPO DOCUMENTI VALE PER TUTTI I CASI--> 
+		<!-- TREE -->	  
 	<record model="ir.ui.view" id="account_it_invoice_linetree">
             <field name="name">account.it.invoice.linetree</field>
             <field name="model">account.invoice.line</field>
@@ -97,15 +95,16 @@
 		 <tree string="Invoice Line" position="replace">
 		   
 		   <tree string="Invoice Line" editable="bottom">
-			<field name="account_id" string="Conto" />
+			<field name="account_id" string="Conto" on_change="conto_change(name, parent.name)" />
 			<field name="price_unit" string="Importo" colspan="2" />
 			 <field colspan="4" name="invoice_line_tax_id" context="{'type':parent.type}" 
 			 domain="[('parent_id','=',False),('company_id', '=', parent.company_id)]"
                             nolabel="1" invisible="1" />
 			<field colspan="2" name="codice_iva_riga_id"  string="Codice Iva"
 			context="{'type':parent.type}" domain="[('parent_id','=',False),('company_id', '=', parent.company_id)]"
-				      nolabel="1"  on_change="codice_iva_change(codice_iva_riga_id,invoice_line_tax_id) />		    
+				      nolabel="1"  on_change="codice_iva_change(codice_iva_riga_id,invoice_line_tax_id)" />		    
 			 <field name="name" string="Descrizione" colspan="3" />	
+			 <field name='raggruppato' string="Ragr" readonly="1" />
 		    <field name="quantity" invisible="1"/>
 		    <field name="uos_id" invisible="1"/>
 		    <field name="discount" invisible="1"/>
@@ -115,6 +114,43 @@
  		</field>
         </record>
 		
+		<!-- FORM -->	  
+	<record model="ir.ui.view" id="account_it_invoice_lineform">
+            <field name="name">account.it.invoice.lineform</field>
+            <field name="model">account.invoice.line</field>
+            <field name="inherit_id" ref="account.view_invoice_line_form"/>
+                <field name="arch" type="xml">
+		     <form string="Invoice Line" position="replace" >
+		           <form string="Invoice Line">
+			<field name="account_id" string="Conto" on_change="conto_change(name, parent.name)" />
+			<field invisible="1" domain="[('type','&lt;&gt;','view'), ('company_id', '=', parent.company_id), ('parent_id', '!=', False)]" name="account_analytic_id" groups="analytic.group_analytic_accounting"/>
+			<field name="price_unit" string="Importo" colspan="2" />
+			 <field colspan="4" name="invoice_line_tax_id" context="{'type':parent.type}" 
+			 domain="[('parent_id','=',False),('company_id', '=', parent.company_id)]"
+                            nolabel="1" invisible="1" />
+			<field colspan="2" name="codice_iva_riga_id"  string="Codice Iva"
+			context="{'type':parent.type}" domain="[('parent_id','=',False),('company_id', '=', parent.company_id)]"
+				      nolabel="1"  on_change="codice_iva_change(codice_iva_riga_id,invoice_line_tax_id)" />		    
+			 <field name="name" string="Descrizione" colspan="3" />	
+			 <field name='raggruppato' string="Ragr" readonly="1" />
+		    <field name="quantity" invisible="1"/>
+		    <field name="uos_id" invisible="1"/>
+		    <field name="discount" invisible="1"/>
+		    <field name="price_subtotal" invisible="1"/>
+			     
+			   </form>
+
+
+
+		     </form>
+
+		  
+
+
+	    </field>
+        </record>
+
+
 
 </data>
     
