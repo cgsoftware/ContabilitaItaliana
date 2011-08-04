@@ -49,6 +49,7 @@ class account_journal(osv.osv):
                                                     ('N', 'No  Documenti')
                                                     ], 'Tipo Documento Iva', size=32, required=True,),
                 'liquidazione': fields.boolean('Stampa Liquidazione', help="Registro su cui si stampa la Liquidazione"),
+                'codice_ivar':fields.many2one('account.tax', 'Codice Iva Standard per il Registro', required=False, readonly=False),
                                          }
                                          
 account_journal()
@@ -91,8 +92,8 @@ class account_journal_period(osv.osv):
      
      '''
     _columns = {
-               'tipo_registro': fields.related('journal_id', 'tipo_registro', string='Tipo Registro', type='many2one', relation='account.journal'),
-               'tipo_documento': fields.related('journal_id', 'tipo_documento', string='Tipo Documento', type='many2one', relation='account.journal'),
+               'tipo_registro': fields.related('journal_id', 'tipo_registro', string='Tipo Registro', type='selection', relation='account.journal'),
+               'tipo_documento': fields.related('journal_id', 'tipo_documento', string='Tipo Documento', type='selection', relation='account.journal'),
                'ultima_pagina': fields.float('ultima pagina stampata', digits=(7, 0)),
                'ultima_riga_tipog':fields.float('ultima riga stampata', digits=(7, 0), help='Ultima riga Stampata sul libro Giornale'),
                'totale_dare': fields.float('Toatle Dare', help='Totale del Periodo Libro Giornale', digits_compute=dp.get_precision('Account')),
@@ -108,6 +109,21 @@ class account_journal_period(osv.osv):
     
 
 account_journal_period()
+
+
+
+class account_fiscalyear_protocolli(osv.osv):
+    _name = 'account.fiscalyear.protocolli'
+    _description = ' Utilizzi del credito iva di inizio anno'
+    _columns = {
+                'fiscalyear_id': fields.many2one('account.fiscalyear', 'Fiscal Year', required=True, select=True),
+                'registro': fields.many2one('account.journal', 'Registro Iva', required=True, select=True),
+                'protocollo':fields.integer('Numero Protocollo ', required=False),
+                'data_registrazione': fields.date('Data Registrazione', required=False,),
+               }
+    
+
+account_fiscalyear_protocolli()
 
 
 
@@ -129,10 +145,13 @@ class account_fiscalyear(osv.osv):
                 'perc_acconto_iva': fields.float('% Acconto Iva', digits=(7, 3)),
                 'acconto_iva': fields.float('Acconto iva di Dicembre', digits_compute=dp.get_precision('Account')),
                 'versamento_minimo': fields.float('Versamento Minimo', digits_compute=dp.get_precision('Account')),
-                'righe_utilizzi_crediti': fields.one2many('account.fiscalyear.iva.crediti', 'fiscalyear_id', 'Righe Utlizzi Crediti', required=True),
+                'righe_utilizzi_crediti': fields.one2many('account.fiscalyear.iva.crediti', 'fiscalyear_id', 'Righe Utlizzi Crediti', required=False),
+                'righe_protocolli': fields.one2many('account.fiscalyear.protocolli', 'fiscalyear_id', 'Ultimi Protocolli Registri', required=False),
                 }
 
-account_fiscalyear()                
+account_fiscalyear()            
+
+    
                 
 
 

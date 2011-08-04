@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="utf-8"?>
+<openerp>
+    <data>
+      <!-- AUTOMATISMI REGISTRAZIONI SUI CLIENTI E FORNITORI -->
+ 
+        <record model="ir.ui.view" id="res_partner_autominvoice">
+            <field name="name">res.partner.autominvoice</field>
+            <field name="model">res.partner</field>
+            <field name="inherit_id" ref="base.view_partner_form"/>
+                <field name="arch" type="xml">
+	                <notebook position="inside">        
+				  <page string="AutoMatismi Documenti">
+	                		<field name="autom_invoice_ids" nolabel="1" mode="tree,form" >
+	                			<tree editable="top">
+	                				<field name="type"  />
+	                				<field name="sequence" size='10'/>
+	                				<field name="account_id" />
+									<field name="codice_iva" />	      	                					                				
+	                			</tree>
+	                			<form>
+	                				<field name="type"  />
+	                				<field name="sequence" size='10'/>
+	                				<field name="account_id" />
+							<field name="codice_iva" />	      	                					                				
+                			</form>
+	                		</field>
+				  </page>
+			</notebook>
+
+		  </field>
+        </record>
+
+
+
+	<!-- MODIFICA FATTURE CLIENTI -->  
+	
+	
+	<record model="ir.ui.view" id="account_it_invoice">
+            <field name="name">account.it.invoice</field>
+            <field name="model">account.invoice</field>
+            <field name="inherit_id" ref="account.invoice_form"/>
+                <field name="arch" type="xml">
+		  <field name="journal_id" position="after">
+			<field string="Data Registrazione" name="data_registrazione"/>
+			  <newline/>
+			  <field name="tipo_registro"  invisible="1" />
+			  <field name="tipo_documento"  invisible="1" />
+			  <field name="codice_ivar"  invisible="1" />
+			  <field name='default_credit_account_id'  invisible="1" />
+			  <field name="default_debit_account_id"  invisible="1" />
+
+		  </field>
+		  
+		  <field name="address_invoice_id" position="replace">
+			<field domain="[('partner_id','=',partner_id)]" name="address_invoice_id"  invisible="1"/>
+
+		  </field>
+	           <field name="fiscal_position" position="replace">
+			<field name="fiscal_position" groups="base.group_extended" widget="selection" invisible="1"/>
+	
+		  </field>
+		  <field name="date_invoice" position="replace">
+			<field string="N.Doc." name="reference" required="True"/>
+			<field name="date_invoice" on_change="date_invoice_change(journal_id,company_id,data_registrazione,partner_id,type,reference)" required="True" />
+			<field string="N.Prot." name='protocollo'/>
+		  </field>
+	<!--			<page string="Shipping" position="replace">	
+		      
+		    </page>
+	    --> 
+		
+
+ 		</field>
+        </record>
+
+	<record model="ir.ui.view" id="account_it_invoice2">
+            <field name="name">account.it.invoice2</field>
+            <field name="model">account.invoice</field>
+            <field name="inherit_id" ref="l10n_it_sale.invoice_form_inherit_contractual_conditions"/>
+                <field name="arch" type="xml">
+ 
+		<page string="Shipping" position="replace">	
+		      
+		    </page>
+
+		
+
+ 		</field>
+        </record>
+		  
+	<record model="ir.ui.view" id="account_it_invoice_linetree">
+            <field name="name">account.it.invoice.linetree</field>
+            <field name="model">account.invoice.line</field>
+            <field name="inherit_id" ref="account.view_invoice_line_tree"/>
+                <field name="arch" type="xml">
+		  
+		 <tree string="Invoice Line" position="replace">
+		   
+		   <tree string="Invoice Line" editable="bottom">
+			<field name="account_id" string="Conto" />
+			<field name="price_unit" string="Importo" colspan="2" />
+			 <field colspan="4" name="invoice_line_tax_id" context="{'type':parent.type}" 
+			 domain="[('parent_id','=',False),('company_id', '=', parent.company_id)]"
+                            nolabel="1" invisible="1" />
+			<field colspan="2" name="codice_iva_riga_id"  string="Codice Iva"
+			context="{'type':parent.type}" domain="[('parent_id','=',False),('company_id', '=', parent.company_id)]"
+				      nolabel="1"  on_change="codice_iva_change(codice_iva_riga_id,invoice_line_tax_id) />		    
+			 <field name="name" string="Descrizione" colspan="3" />	
+		    <field name="quantity" invisible="1"/>
+		    <field name="uos_id" invisible="1"/>
+		    <field name="discount" invisible="1"/>
+		    <field name="price_subtotal" invisible="1"/>
+		  </tree>
+		</tree>
+ 		</field>
+        </record>
+		
+
+</data>
+    
+    
+</openerp>

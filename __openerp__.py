@@ -30,6 +30,7 @@
     "update_xml" : [
                     'security/ir.model.access.csv',
                     'RegistriProgressivi/RegistriProgressivi_view.xml',
+                    'DocumentiIva/DocumentiIva_view.xml',
                     ],
     'website': 'http://www.cgsoftware.it',
     'installable': True,

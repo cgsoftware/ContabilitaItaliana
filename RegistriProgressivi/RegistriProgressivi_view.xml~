@@ -13,6 +13,7 @@
 					<field name="tipo_registro"/>
 					<field name="tipo_documento" />
 					<field name="liquidazione" />
+					<field name="codice_ivar" />					
 				  </page>
 			</notebook>
 
@@ -27,7 +28,8 @@
             <field name="inherit_id" ref="account.view_account_fiscalyear_form"/>
                 <field name="arch" type="xml">
 		   <field name="period_ids" position="after">
-					<separator string="Dati Iva Annuali "  />				  
+					 <newline/>
+			             <group col="8" colspan="4">
 					<field name="tipo_liquidazione"/>
 					<field name="plafond_iniziale" />
 					<field name="plafond_residuo" />
@@ -37,9 +39,12 @@
 					<field name="maggiorazione_trimestrale" />
 					<field name="perc_acconto_iva" />
 					<field name="acconto_iva" />					
-					<field name="versamento_minimo" />							
-				    <separator string="Utilizzo Crediti Iva "  />
-	                		<field name="righe_utilizzi_crediti" nolabel="1" mode="tree,form" string="Crediti Utilizzati">
+					<field name="versamento_minimo" />
+				      </group>
+					 <newline/>
+
+	                		<field name="righe_utilizzi_crediti"  mode="tree,form" string="Crediti Utilizzati">
+					  
 	                			<tree editable="top">
 	                				<field name="data_utilizzo"  />
 	                				<field name="tipo_utilizzo" />
@@ -51,6 +56,21 @@
 	                				<field name="importo_utilizzato" />	                				
 	                			</form>
 	                		</field>
+				 <newline/>
+
+	                		<field name="righe_protocolli"  mode="tree,form" string="Protocolli Registri Iva">
+	                			<tree editable="top">
+	                				<field name="registro"  />
+	                				<field name="protocollo" />
+	                				<field name="data_registrazione" />	                				
+	                			</tree>
+	                			<form>
+	                				<field name="registro"  />
+	                				<field name="protocollo" />
+	                				<field name="data_registrazione" />	                				
+	                			</form>
+	                		</field>
+	                		
 		      </field>
 
 		  </field>
