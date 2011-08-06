@@ -13,7 +13,9 @@
 					<field name="tipo_registro"/>
 					<field name="tipo_documento" />
 					<field name="liquidazione" />
-					<field name="codice_ivar" />					
+					<field name="codice_ivar" />	
+					<field name="partner_id" />
+					<field name="conto_cassa_id" />
 				  </page>
 			</notebook>
 
@@ -43,7 +45,7 @@
 				      </group>
 					 <newline/>
 
-	                		<field name="righe_utilizzi_crediti"  mode="tree,form" string="Crediti Utilizzati">
+	                		<field name="righe_utilizzi_crediti" nolabel="1" mode="tree,form" string="Crediti Utilizzati">
 					  
 	                			<tree editable="top">
 	                				<field name="data_utilizzo"  />
@@ -58,7 +60,7 @@
 	                		</field>
 				 <newline/>
 
-	                		<field name="righe_protocolli"  mode="tree,form" string="Protocolli Registri Iva">
+	                		<field name="righe_protocolli" nolabel="1" mode="tree,form" string="Protocolli Registri Iva">
 	                			<tree editable="top">
 	                				<field name="registro"  />
 	                				<field name="protocollo" />

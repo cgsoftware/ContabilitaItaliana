@@ -20,6 +20,7 @@
 ##############################################################################
 
 import time
+from lxml import etree
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
 from operator import itemgetter
@@ -58,6 +59,46 @@ account_invoice_line()
 
 class account_invoice(osv.osv):
     _inherit = "account.invoice"
+    
+    def _get_journal1(self, cr, uid, context=None):
+        if context is None:
+            context = {}
+        #import pdb;pdb.set_trace() 
+        type_inv = context.get('type', 'out_invoice')
+        tipo_registro = context.get('tipo_registro', False)
+        res_sup = self._get_journal(cr, uid, context)
+        if type_inv == 'out_invoice': # ha selezionato i registri  fatture di vendita
+            journal_obj = self.pool.get('account.journal')
+            if tipo_registro:
+                user = self.pool.get('res.users').browse(cr, uid, uid, context=context)
+                company_id = context.get('company_id', user.company_id.id)
+                type2journal = {'out_invoice': 'sale', 'in_invoice': 'purchase', 'out_refund': 'sale_refund', 'in_refund': 'purchase_refund'}
+                refund_journal = {'out_invoice': False, 'in_invoice': False, 'out_refund': True, 'in_refund': True}
+                journal_obj = self.pool.get('account.journal')
+                #import pdb;pdb.set_trace()
+                res1 = journal_obj.search(cr, uid, [('type', '=', type2journal.get(type_inv, 'sale')),
+                                            ('company_id', '=', company_id),
+                                            ('tipo_registro', '=', tipo_registro),
+                                            ('refund_journal', '=', refund_journal.get(type_inv, False))],
+                                                limit=1)
+            else:
+                user = self.pool.get('res.users').browse(cr, uid, uid, context=context)
+                company_id = context.get('company_id', user.company_id.id)
+                type2journal = {'out_invoice': 'sale', 'in_invoice': 'purchase', 'out_refund': 'sale_refund', 'in_refund': 'purchase_refund'}
+                refund_journal = {'out_invoice': False, 'in_invoice': False, 'out_refund': True, 'in_refund': True}
+                journal_obj = self.pool.get('account.journal')
+                #import pdb;pdb.set_trace()
+                res1 = journal_obj.search(cr, uid, [('type', '=', type2journal.get(type_inv, 'sale')),
+                                            ('company_id', '=', company_id), ('tipo_registro', '=', 'V'),
+                                            ('refund_journal', '=', refund_journal.get(type_inv, False))],
+                                                limit=1)
+
+        else:
+                res1 = [res_sup]
+                     
+        return res1 and res1[0] or False
+    
+    
     _columns = {
                 'data_registrazione': fields.date('Data Registrazione', required=True, states={'open':[('readonly', True)]}, select=True),
                 'protocollo':fields.integer('Numero Protocollo ', required=True),
@@ -100,6 +141,7 @@ class account_invoice(osv.osv):
        
        if journal_id:
             journal = self.pool.get('account.journal').browse(cr, uid, journal_id)
+            #tipo_registro = context.get('tipo_registro', False)
             # currency_id = journal.currency and journal.currency.id or journal.company_id.currency_id.id standard 
             result['value'].update({
                                  # 'protocollo' : journal.protocollo, ## deve essere preso dao dati annuali account.fiscalyear.protocolli
@@ -110,6 +152,11 @@ class account_invoice(osv.osv):
                                  'default_debit_account_id' : journal.default_debit_account_id.id,
                     
                     })
+            # import pdb;pdb.set_trace()
+            if journal.tipo_registro == 'C':
+                result['value'].update({
+                                        'partner_id' : journal.partner_id.id,
+                                         })
                 
      #period_ids = self.pool.get('account.period').search(cr, uid, [('date_start', '<=', inv.date_invoice or time.strftime('%Y-%m-%d')),                                                               ('date_stop', '>=', inv.date_invoice or time.strftime('%Y-%m-%d')), ('company_id', '=', inv.company_id.id)])
        #import pdb;pdb.set_trace() 
@@ -142,9 +189,17 @@ class account_invoice(osv.osv):
                     }
         #import pdb;pdb.set_trace()
         registro = self.pool.get('account.journal').browse(cr, uid, [journal_id])[0]
+        if registro.tipo_registro == 'C':
+             result['value'].update({
+                                     'account_id':registro.conto_cassa_id.id,
+                                     })
+        
         if partner_id:
             if 'invoice' in type:
-                    Descrizione = "Fat. N. " + reference + " " + self.pool.get('res.partner').browse(cr, uid, [partner_id])[0].name
+                    if registro.tipo_registro == 'C':
+                        Descrizione = "Corrispettivi del " + data_registrazione + " "
+                    else:
+                        Descrizione = "Fat. N. " + reference + " " + self.pool.get('res.partner').browse(cr, uid, [partner_id])[0].name
             else:
                     Descrizione = "Nota Credito N. " + reference + " " + self.pool.get('res.partner').browse(cr, uid, [partner_id])[0].name
             
@@ -256,7 +311,7 @@ class account_invoice(osv.osv):
                             else:
                                 codiva = [(6, 0, [])]
                             riga_corr = self.pool.get('account.invoice.line').browse(cr, uid, riga_conto[1])[0]
-                            import pdb;pdb.set_trace()
+                            #import pdb;pdb.set_trace()
                             new_riga = {
                                         'name':riga_corr.name,
                                         'invoice_id':riga_corr.invoice_id.id,
@@ -285,6 +340,7 @@ class account_invoice(osv.osv):
       
     _defaults = {
                  'data_registrazione': lambda * a: time.strftime('%Y-%m-%d'),
+                 'journal_id': _get_journal1
                  # 'protocollo':_get_protocollo,
                  }
     
@@ -305,6 +361,66 @@ class account_invoice(osv.osv):
         return result
      
 
+
+
+    def fields_view_get(self, cr, uid, view_id=None, view_type=False, context=None, toolbar=False, submenu=False):
+        ## Vecchio codice
+        journal_obj = self.pool.get('account.journal')
+        if context is None:
+            context = {}
+
+        if context.get('active_model', '') in ['res.partner'] and context.get('active_ids', False) and context['active_ids']:
+            partner = self.pool.get(context['active_model']).read(cr, uid, context['active_ids'], ['supplier', 'customer'])[0]
+            if not view_type:
+                view_id = self.pool.get('ir.ui.view').search(cr, uid, [('name', '=', 'account.invoice.tree')])
+                view_type = 'tree'
+            if view_type == 'form':
+                if partner['supplier'] and not partner['customer']:
+                    view_id = self.pool.get('ir.ui.view').search(cr, uid, [('name', '=', 'account.invoice.supplier.form')])
+                else:
+                    view_id = self.pool.get('ir.ui.view').search(cr, uid, [('name', '=', 'account.invoice.form')])
+                    if tipo_registro == "C":
+                       view_id = self.pool.get('ir.ui.view').search(cr, uid, [('name', '=', 'account.corrispettivi.form')]) 
+        if view_id and isinstance(view_id, (list, tuple)):
+            view_id = view_id[0]
+        res = super(account_invoice, self).fields_view_get(cr, uid, view_id=view_id, view_type=view_type, context=context, toolbar=toolbar, submenu=submenu)
+
+        type = context.get('journal_type', 'sale')
+        for field in res['fields']:
+            if field == 'journal_id':
+                journal_select = journal_obj._name_search(cr, uid, '', [('type', '=', type)], context=context, limit=None, name_get_uid=1)
+                res['fields'][field]['selection'] = journal_select
+
+        if view_type == 'tree':
+            doc = etree.XML(res['arch'])
+            nodes = doc.xpath("//field[@name='partner_id']")
+            partner_string = _('Customer')
+            if context.get('type', 'out_invoice') in ('in_invoice', 'in_refund'):
+                partner_string = _('Supplier')
+            for node in nodes:
+                node.set('string', partner_string)
+            res['arch'] = etree.tostring(doc)
+
+        journal_obj = self.pool.get('account.journal')
+        if context is None:
+            context = {}        
+        # res = super(account_invoice, self).fields_view_get(cr, uid, view_id=view_id, view_type=view_type, context=context, toolbar=toolbar, submenu=submenu)
+        tipo_registro = context.get('tipo_registro', False)
+        type = context.get('journal_type', 'sale')
+        if tipo_registro:
+            for field in res['fields']:
+                if field == 'journal_id':
+                    journal_select = journal_obj._name_search(cr, uid, '', [('type', '=', type), ('tipo_registro', '=', tipo_registro)], context=context, limit=None, name_get_uid=1)
+                    res['fields'][field]['selection'] = journal_select
+        else:
+            if type == 'sale':
+                for field in res['fields']:
+                    if field == 'journal_id':
+                        journal_select = journal_obj._name_search(cr, uid, '', [('type', '=', type), ('tipo_registro', '=', 'V')], context=context, limit=None, name_get_uid=1)
+                        res['fields'][field]['selection'] = journal_select
+                
+        
+        return res
         
 account_invoice()        
 

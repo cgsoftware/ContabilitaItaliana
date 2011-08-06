@@ -297,7 +297,7 @@
             </field>
         </record>
 
-        <record id="view_account_corrispettivi.filter" model="ir.ui.view">
+        <record id="view_account_corrispettivi_filter" model="ir.ui.view">
             <field name="name">account.corrispettivi.select</field>
             <field name="model">account.invoice</field>
             <field name="type">search</field>

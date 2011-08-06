@@ -50,6 +50,8 @@ class account_journal(osv.osv):
                                                     ], 'Tipo Documento Iva', size=32, required=True,),
                 'liquidazione': fields.boolean('Stampa Liquidazione', help="Registro su cui si stampa la Liquidazione"),
                 'codice_ivar':fields.many2one('account.tax', 'Codice Iva Standard per il Registro', required=False, readonly=False),
+                'partner_id': fields.many2one('res.partner', 'Partner', readonly=False, required=False),
+                'conto_cassa_id':fields.many2one('account.account', 'Conto Cassa', readonly=False, required=False)
                                          }
                                          
 account_journal()

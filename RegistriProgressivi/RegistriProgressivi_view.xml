@@ -13,7 +13,9 @@
 					<field name="tipo_registro"/>
 					<field name="tipo_documento" />
 					<field name="liquidazione" />
-					<field name="codice_ivar" />					
+					<field name="codice_ivar" />	
+					<field name="partner_id" />
+					<field name="conto_cassa_id" />
 				  </page>
 			</notebook>
 
