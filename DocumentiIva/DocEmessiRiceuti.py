@@ -137,12 +137,14 @@ class account_invoice(osv.osv):
 
     def onchange_journal_id(self, cr, uid, ids, journal_id=False):
        result = {}
+       #import pdb;pdb.set_trace()
        result = super(account_invoice, self).onchange_journal_id(cr, uid, ids, journal_id)
-       
+        
        if journal_id:
             journal = self.pool.get('account.journal').browse(cr, uid, journal_id)
             #tipo_registro = context.get('tipo_registro', False)
             # currency_id = journal.currency and journal.currency.id or journal.company_id.currency_id.id standard 
+            #import pdb;pdb.set_trace()
             result['value'].update({
                                  # 'protocollo' : journal.protocollo, ## deve essere preso dao dati annuali account.fiscalyear.protocolli
                                  'tipo_registro' : journal.tipo_registro,
@@ -152,8 +154,13 @@ class account_invoice(osv.osv):
                                  'default_debit_account_id' : journal.default_debit_account_id.id,
                     
                     })
-            # import pdb;pdb.set_trace()
+            #import pdb;pdb.set_trace()
+            
             if journal.tipo_registro == 'C':
+            
+                res_partner = self.onchange_partner_id(cr, uid, ids, 'Customer Invoice', journal.partner_id.id)
+                if res_partner:
+                   result['value'].update(res_partner['value'])
                 result['value'].update({
                                         'partner_id' : journal.partner_id.id,
                                          })
@@ -163,11 +170,12 @@ class account_invoice(osv.osv):
        return result
    
     def  date_invoice_change(self, cr, uid, ids, journal_id, company_id, data_registrazione, partner_id, type, reference):
-        # import pdb;pdb.set_trace() 
+       
         result = {}
         period_id = self.pool.get('account.period').search(cr, uid, [('date_start', '<=', data_registrazione), ('date_stop', '>=', data_registrazione), ('company_id', '=', company_id)])[0]
         periodo = self.pool.get('account.period').browse(cr, uid, [period_id])[0]
         fiscalyear = periodo.fiscalyear_id
+        #import pdb;pdb.set_trace() 
         protocollo_ids = self.pool.get('account.fiscalyear.protocolli').search(cr, uid, [('fiscalyear_id', '=', fiscalyear.id),
                                                                                         ('registro', '=', journal_id)                                                                                       
                                                                                         ])
@@ -208,6 +216,7 @@ class account_invoice(osv.osv):
             if partner_auto_ids:
                 # c'è un automatismo personalizzato
                 righe = []
+                import pdb;pdb.set_trace()
                 for riga in self.pool.get("account.partner_autominvoice").browse(cr, uid, partner_auto_ids):
                     righe.append({
                           "product_id":None,
@@ -219,7 +228,7 @@ class account_invoice(osv.osv):
                           "name":Descrizione , # qui dovresti creare una decrizione del documento
                           "uos_id":None,
                           'invoice_line_tax_id':[riga.codice_iva.id],
-                          'codice_iva_riga_id':registro.codice_ivar.id,
+                          'codice_iva_riga_id':riga.codice_iva.id,
                           } 
                                  )
 
@@ -261,7 +270,22 @@ class account_invoice(osv.osv):
             context = {}
         ctx = context.copy()
         righe_obj = self.pool.get('account.invoice')
+        
         if not  righe_obj.browse(cr, uid, ids)[0].tax_line:
+            # PER PRIMA COSA CANCELLA LE RIGHE A ZERO SENZA CHIEDERE PER ORA POI BISOGNA CERCARE UN SI/NO
+            id = righe_obj.browse(cr, uid, ids)[0].id
+            to_unlink = self.pool.get('account.invoice.line').search(cr, uid, [('invoice_id', '=', id), ('price_unit', '=', '0'), ('price_subtotal', '=', '0')])
+            if to_unlink:
+                 ok = self.pool.get('account.invoice.line').unlink(cr, uid, to_unlink)
+            # ora verifica che non si tratti del registro corrispettivi per quindi scorpora il price unit e e price subtotal
+            # SENZA CHIEDERE PER ORA POI BISOGNA CERCARE UN SI/NO
+            if righe_obj.browse(cr, uid, ids)[0].tipo_registro == 'C':
+                # è registro corrispettivi la prima volta e quindi scorpora
+                for riga in righe_obj.browse(cr, uid, ids)[0].invoice_line:
+                    ok = self.pool.get('account.invoice.line').write(cr, uid, [riga.id],
+                                                                      {'price_unit':riga.price_unit / (1 + riga.codice_iva_riga_id.amount),
+                                                                       'price_subtotal':riga.price_unit / (1 + riga.codice_iva_riga_id.amount)})
+                 
             # è la prima volta che ci entra e quindi lancia il calcolo brutale
             superiore = super(account_invoice, self).button_reset_taxes(cr, uid, ids, context=None)
         for id in ids: # ciclo sulle varie fatture ma è solo una comunque 
@@ -332,7 +356,7 @@ class account_invoice(osv.osv):
                                         }
                             id_new = self.pool.get('account.invoice.line').create(cr, uid, new_riga)
                             ok = self.pool.get('account.invoice.line').unlink(cr, uid, riga_conto[1])
-               # lancia il ricalcolo che se manale non avrà effetto e nei giri successivi non sarà effettuato
+               # lancia il ricalcolo che se manuale non avrà effetto e nei giri successivi non sarà effettuato
                #superiore = super(account_invoice, self).button_reset_taxes(cr, uid, ids, context=None)         
 
         
@@ -368,13 +392,15 @@ class account_invoice(osv.osv):
         journal_obj = self.pool.get('account.journal')
         if context is None:
             context = {}
-
+        #import pdb;pdb.set_trace()
         if context.get('active_model', '') in ['res.partner'] and context.get('active_ids', False) and context['active_ids']:
             partner = self.pool.get(context['active_model']).read(cr, uid, context['active_ids'], ['supplier', 'customer'])[0]
+            #import pdb;pdb.set_trace()
             if not view_type:
                 view_id = self.pool.get('ir.ui.view').search(cr, uid, [('name', '=', 'account.invoice.tree')])
                 view_type = 'tree'
             if view_type == 'form':
+                #import pdb;pdb.set_trace() 
                 if partner['supplier'] and not partner['customer']:
                     view_id = self.pool.get('ir.ui.view').search(cr, uid, [('name', '=', 'account.invoice.supplier.form')])
                 else:

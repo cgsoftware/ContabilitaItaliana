@@ -104,13 +104,14 @@
                             nolabel="1" invisible="1" />
 			<field colspan="2" name="codice_iva_riga_id"  string="Codice Iva"
 			context="{'type':parent.type}" domain="[('parent_id','=',False),('company_id', '=', parent.company_id)]"
-				      nolabel="1"  on_change="codice_iva_change(codice_iva_riga_id,invoice_line_tax_id)" />		    
+				      nolabel="1"  on_change="codice_iva_change(codice_iva_riga_id,invoice_line_tax_id)" />	
+			 <field name="price_subtotal"  string="Imponibile" attrs="{'invisible':[('parent.tipo_registro','!=','C')]}"  />				      
 			 <field name="name" string="Descrizione" colspan="3" />	
 			 <field name='raggruppato' string="Ragr" readonly="1" />
 		    <field name="quantity" invisible="1"/>
 		    <field name="uos_id" invisible="1"/>
 		    <field name="discount" invisible="1"/>
-		    <field name="price_subtotal" invisible="1"/>
+
 		  </tree>
 		</tree>
  		</field>
@@ -133,12 +134,13 @@
 			     <field colspan="2" name="codice_iva_riga_id"  string="Codice Iva"
 				    context="{'type':parent.type}" domain="[('parent_id','=',False),('company_id', '=', parent.company_id)]"
 				     nolabel="1"  on_change="codice_iva_change(codice_iva_riga_id,invoice_line_tax_id)" />		    
+			      <field name="price_subtotal"  string="Imponibile" attrs="{'invisible':[('parent.tipo_registro','!=','C')]}  />
 			      <field name="name" string="Descrizione" colspan="3" />	
 			      <field name='raggruppato' string="Ragr" readonly="1" />
 			      <field name="quantity" invisible="1"/>
 			      <field name="uos_id" invisible="1"/>
 			      <field name="discount" invisible="1"/>
-			      <field name="price_subtotal" invisible="1"/>
+			      
 			   </form>
 		     </form> 
 	    </field>
@@ -228,12 +230,13 @@
 		  <field name="codice_ivar"  invisible="1" />
 		  <field name='default_credit_account_id'  invisible="1" />
 		  <field name="default_debit_account_id"  invisible="1" />
-                    <field invisible="1" string="Customer" invisible="1" name="partner_id" on_change="onchange_partner_id(type,partner_id,date_invoice,payment_term, partner_bank_id,company_id)" groups="base.group_user" context="{'search_default_customer': 1}"/>
-                    <field invisible="1" domain="[('partner_id','=',partner_id)]" name="address_invoice_id"/>
+                    <field invisible = "1" string="Customer" name="partner_id" on_change="onchange_partner_id(type,partner_id,date_invoice,payment_term, partner_bank_id,company_id)" groups="base.group_user" context="{'search_default_customer': 1}"/>
+                    <field invisible = "1"  domain="[('partner_id','=',partner_id)]" name="address_invoice_id"/>
                     <field invisible="1" name="fiscal_position" groups="base.group_extended" widget="selection"/>
                     <newline/>
                     <field name="date_invoice" on_change="date_invoice_change(journal_id,company_id,data_registrazione,partner_id,type,reference)" required="True" />
                     <field name="period_id" domain="[('state', '=', 'draft')]" groups="account.group_account_user" widget="selection"/>
+		    <field string="N.Prot." name='protocollo' invisible="1" />
                     </group>
                     <notebook colspan="4">
                         <page string="Importi Corrispettivi">
@@ -340,6 +343,21 @@
             <field name="search_view_id" ref="view_account_corrispettivi_filter"/>
             <field name="help"> Registra i Corrispettivi Giornalieri</field>
         </record>
+	
+	
+	<record id="action_corrisp_tree_view1" model="ir.actions.act_window.view">
+            <field eval="1" name="sequence"/>
+            <field name="view_mode">tree</field>
+            <field name="act_window_id" ref="action_corrispettivi_tree1"/>
+        </record>
+
+        <record id="action_corrisp_tree_view2" model="ir.actions.act_window.view">
+            <field eval="2" name="sequence"/>
+            <field name="view_mode">form</field>
+            <field name="view_id" ref="corrispettivi_form"/>
+            <field name="act_window_id" ref="action_corrispettivi_tree1"/>
+        </record>
+
 
        <menuitem action="action_corrispettivi_tree1" 
 	          id="menu_corrispettivi" 
