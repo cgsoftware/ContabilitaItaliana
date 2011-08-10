@@ -75,6 +75,14 @@ account_fiscalyear_iva_crediti()
 class progressivi_iva_period(osv.osv):
     _name = 'progressivi.iva.period'
     _description = ' Progressivi dei Registri Iva per periodo'
+    
+    def _get_id_juornal_period(self, cr, uid, journal_id, period_id):
+            ids = self.pool.get('account.journal.period').search(cr, uid, [('journal_id', '=', journal_id), ('period_id', '=', period_id)])
+            if ids:
+                return ids[0]
+            else:
+                return False
+                
     """  si aggiornano quando si lancia la stampa del registro non importa lo azzera e lo ricalcola' """
     _columns = {
                 'period_registro_id': fields.many2one('account.journal.period', 'Periodo Registro', required=True, select=True),
@@ -82,6 +90,43 @@ class progressivi_iva_period(osv.osv):
                 'totale_imponibile': fields.float('Imponibile Periodo', help='Totale Imponibile del Periodo ', digits_compute=dp.get_precision('Account')),
                 'totale_imposta': fields.float('Imposta del Periodo', help='Totale Imposta del Periodo ', digits_compute=dp.get_precision('Account')),
                 }
+    
+    def svuota(self, cr, uid, journal_id, period_id):
+        ids = self._get_id_juornal_period(cr, uid, journal_id, period_id)
+        if ids:
+            ids_p = self.search(cr, uid, [('period_registro_id', '=', ids)])
+            ok = self.unlink(cr, uid, ids_p)
+        return True
+    
+    def aggiorna_prog(self, cr, uid, journal_id, period_id):
+        self.svuota(cr, uid, journal_id, period_id)
+        #import pdb;pdb.set_trace()
+        id_perido_journal = self._get_id_juornal_period(cr, uid, journal_id, period_id)
+        if id_perido_journal:
+            ids_reg = self.pool.get('account.temp.regiva').search(cr, uid, [])
+            if ids_reg:
+                for riga_reg in self.pool.get('account.temp.regiva').browse(cr, uid, ids_reg):
+                    prog_id = self.search(cr, uid, [('period_registro_id', '=', id_perido_journal), ('codice_iva', '=', riga_reg.codice_iva_riga_id.id)])
+                    if prog_id:
+                        riga_prog = self.browse(cr, uid, prog_id)[0]
+                        riga = {
+                               'period_registro_id': id_perido_journal,
+                               'codice_iva':riga_reg.codice_iva_riga_id.id,
+                               'totale_imponibile': riga_prog.totale_imponibile + riga_reg.base,
+                               'totale_imposta': riga_prog.totale_imposta + riga_reg.amount,
+                              }
+                        ok = self.write(cr, uid, prog_id, riga)
+                        
+                    else:
+                        riga = {
+                               'period_registro_id': id_perido_journal,
+                               'codice_iva':riga_reg.codice_iva_riga_id.id,
+                               'totale_imponibile': riga_reg.base,
+                               'totale_imposta':riga_reg.amount,
+                              }
+                        id_prog = self.create(cr, uid, riga)
+            return True
+
     
 progressivi_iva_period()
 
@@ -110,6 +155,14 @@ class account_journal_period(osv.osv):
                 }
     
 
+    def _check(self, cr, uid, ids, context=None):
+        for obj in self.browse(cr, uid, ids, context=context):
+            cr.execute('select * from account_move_line where journal_id=%s and period_id=%s limit 1', (obj.journal_id.id, obj.period_id.id))
+            res = cr.fetchall()
+            if res:
+                pass # eliminato il controllo
+              #  raise osv.except_osv(_('Error !'), _('You can not modify/delete a journal with entries for this period !'))
+        return True
 account_journal_period()
 
 
@@ -153,8 +206,15 @@ class account_fiscalyear(osv.osv):
 
 account_fiscalyear()            
 
+
+class account_tax(osv.osv):
+      _inherit = 'account.tax'
+      _columns = {
+                  'indetraibile':fields.boolean('flag iva indetraibile'),
+                  }
+      
     
-                
+account_tax()                
 
 
 

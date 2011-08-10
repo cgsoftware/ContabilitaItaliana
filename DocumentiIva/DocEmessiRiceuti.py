@@ -57,6 +57,8 @@ class account_invoice_line(osv.osv):
 
 account_invoice_line()
 
+
+
 class account_invoice(osv.osv):
     _inherit = "account.invoice"
     
@@ -483,7 +485,207 @@ class res_partner(osv.osv):
 res_partner()
 
 
+class account_temp_regiva(osv.osv):
+    _name = "account.temp.regiva"
+    _description = 'Temporaneo Stampa Registro Iva'
+    _columns = {
+                'journal_id': fields.many2one('account.journal', 'Registro Iva', required=True),
+                'period_id': fields.many2one('account.period', 'Periodo di Stampa'),
+                'data_registrazione': fields.date('Data Registrazione', required=True),
+                'data_doc': fields.date('Data Documento', required=True),
+                'protocollo':fields.integer('Numero Protocollo ', required=True),
+                'num_doc': fields.char('Numero Doc.', size=64),
+                'tipo_registro': fields.related('journal_id', 'tipo_registro', string='Tipo Registro', type='char', relation='account.journal'),
+                'tipo_documento': fields.related('journal_id', 'tipo_documento', string='Tipo Documento', type='char', relation='account.journal'),
+                'type': fields.related('journal_id', 'type', string='Tipo', type='char', relation='account.journal'),
+                'des_registro': fields.related('journal_id', 'name', string='Descrizone Registro', type='char', relation='account.journal'),
+                'partner_id': fields.many2one('res.partner', 'Partner'),
+                'ragsoc':fields.related('partner_id', 'name', string='Ragione Sociale', type='char', relation='res.partner'),
+                'tot_doc':fields.float('Totale Documento', required=True, digits_compute=dp.get_precision('Account')),
+                'codice_iva_riga_id': fields.many2one('account.tax', "Codice Iva"),
+                'indetraibile':fields.boolean('flag indetraibile'),
+                'des_iva': fields.char('descrizione iva .', size=64),
+                'base': fields.float('Imponibile', digits_compute=dp.get_precision('Account')),
+                'amount': fields.float('Imposta', digits_compute=dp.get_precision('Account')),
+                }
+    _order = 'data_registrazione,protocollo,data_doc,num_doc'
+    def pulisci(self, cr, uid):
+        # cancella tutte le righe prima di iniziare a lavorare
+        ids = self.search(cr, uid, [])
+        if ids:
+            ok = self.unlink(cr, uid, ids)
+        return True
+    
+    def crea_temp(self, cr, uid, period_id, journal_id):
+        if period_id and journal_id:
+            self.pulisci(cr, uid)
+            
+            docs_ids = self.pool.get('account.invoice').search(cr, uid, [('journal_id', '=', journal_id), ('period_id', '=', period_id)], order='data_registrazione,protocollo')
+            if docs_ids:
+                for doc_line in self.pool.get('account.invoice').browse(cr, uid, docs_ids):
+                    for tax_line in doc_line.tax_line:
+                        code_iva = tax_line.name.split('-')[0].strip()
+                        code_iva_ids = self.pool.get('account.tax').search(cr, uid, [('description', '=', code_iva), ('active', '=', 'true')])
+                        if code_iva_ids:
+                            cod_iva_id = self.pool.get('account.tax').browse(cr, uid, code_iva_ids)[0].id
+                            indetraibile = self.pool.get('account.tax').browse(cr, uid, code_iva_ids)[0].indetraibile
+                        else:
+                             #import pdb;pdb.set_trace()
+                             cod_iva_id = 0
+                             indetraibile = False
+                        #import pdb;pdb.set_trace()
+                        riga_reg = {
+                                    'journal_id':journal_id,
+                                    'period_id':period_id,
+                                    'data_registrazione':doc_line.data_registrazione,
+                                    'data_doc':doc_line.date_invoice,
+                                    'protocollo':doc_line.protocollo,
+                                    'num_doc':doc_line.reference,
+                                    'partner_id':doc_line.partner_id.id,
+                                    'tot_doc':doc_line.amount_total,
+                                    'des_iva':tax_line.name,
+                                    'base':tax_line.base,
+                                    'amount':tax_line.amount,
+                                    'codice_iva_riga_id':cod_iva_id,
+                                    'indetraibile':indetraibile,
+                                    }
+                        id_reg = self.create(cr, uid, riga_reg)
+                
+                ok = self.pool.get('progressivi.iva.period').aggiorna_prog(cr, uid, journal_id, period_id)  # ricalcola i progressivi del periodo in stampa
+                ok = self.pool.get('account.temp.totaliregiva').crea_totali(cr, uid, journal_id, period_id)  # crea il temporaneo dei totali per il registro da stampare       
+                
+            else:
+                    raise osv.except_osv(_('Errore !'),
+                                             _('Non ci sono Documenti per il Perido Indicato'))
+                    return False
+                
+        
+        return True
 
+account_temp_regiva()
 
+class account_temp_totaliregiva(osv.osv):
+    _name = "account.temp.totaliregiva"
+    _description = 'Temporaneo tolali Stampa Registro Iva'
+    _columns = {
+                'journal_id': fields.many2one('account.journal', 'Registro Iva', required=True),
+                'period_id': fields.many2one('account.period', 'Periodo di Stampa'),
+                'period_registro_id': fields.many2one('account.journal.period', 'Periodo Registro', required=False, select=True),
+                'codice_iva_riga_id': fields.many2one('account.tax', "Codice Iva"),
+                'indetraibile':fields.boolean('flag indetraibile'),
+                'tot_impon_periodo': fields.float('Imponibile Periodo', digits_compute=dp.get_precision('Account')),
+                'tot_imposta_periodo': fields.float('Imposta Periodo', digits_compute=dp.get_precision('Account')),
+                'tot_impon_progressivo': fields.float('Imponibile Periodo', digits_compute=dp.get_precision('Account')),
+                'tot_imposta_progressivo': fields.float('Imposta Periodo', digits_compute=dp.get_precision('Account')),
+                }
+    
+    def svuota(self, cr, uid):
+        # cancella tutte le righe prima di iniziare a lavorare
+        ids = self.search(cr, uid, [])
+        if ids:
+            ok = self.unlink(cr, uid, ids)
+        return True
+    
+    def crea_totali(self, cr, uid, journal_id, period_id):
+        ok = self.svuota(cr, uid)
+        id_perido_journal = self.pool.get('progressivi.iva.period')._get_id_juornal_period(cr, uid, journal_id, period_id)
+        if id_perido_journal:  
+            ids_progreg = self.pool.get('progressivi.iva.period').search(cr, uid, [('period_registro_id', '=', id_perido_journal)])
+            #import pdb;pdb.set_trace()    
+            # INSERISCE PRIMA I PROGRESSIVI DEL PERIODO INDICATO
+            if ids_progreg:
+                for rig_prog in self.pool.get('progressivi.iva.period').browse(cr, uid, ids_progreg):
+                    ok = self.scrive(cr, uid, rig_prog, 'per', journal_id, period_id)
+            # ora calcola i progressivi dei periodi pprecedenti        
+            period_obj = self.pool.get("account.period")
+            code = period_obj.browse(cr, uid, [period_id])[0].code.split('/')
+            nper = int(code[0])
+            for nmese in range(nper - 1, 0, -1): # cicla sui periodi precedenti e calcola i progressivi precedenti (mesi o trimestri)
+                    mese = str(nmese).zfill(2)
+                    new_code = mese + '/' + code[1]
+                    period_ids = period_obj.search(cr, uid, [('code', '=', new_code)])
+                    if period_ids:
+                        id_perido_journal1 = self.pool.get('progressivi.iva.period')._get_id_juornal_period(cr, uid, journal_id, period_ids[0])
+                        if id_perido_journal1:
+                            ids_progreg = self.pool.get('progressivi.iva.period').search(cr, uid, [('period_registro_id', '=', id_perido_journal1)])
+                            if ids_progreg:
+                                for rig_prog in self.pool.get('progressivi.iva.period').browse(cr, uid, ids_progreg):
+                                    ok = self.scrive(cr, uid, rig_prog, 'prog', journal_id, period_id)
+            ids_scritti = self.search(cr, uid, [])
+            if ids_scritti: # ora aggiunge nei progressivi precedenti i progressivi attuali
+                for id1 in ids_scritti:
+                    rec = self.browse(cr, uid, [id1])[0]
+                    riga = {
+                            'tot_impon_progressivo':rec.tot_impon_progressivo + rec.tot_impon_periodo,
+                            'tot_imposta_progressivo':rec.tot_imposta_progressivo + rec.tot_imposta_periodo,
+                            }
+                    ok = self.write(cr, uid, [id1], riga)                   
+            else:
+                    raise osv.except_osv(_('Errore !'),
+                                             _('Non Ci Sono Progressivi per il Periodo Indicato'))
+                    return False
 
+               
 
+        
+        return True
+    
+    def scrive(self, cr, uid, riga_prog, tipo, journal_id, period_id):
+        #import pdb;pdb.set_trace()   
+        if riga_prog:
+            ids_temp = self.pool.get("account.temp.totaliregiva").search(cr, uid, [('codice_iva_riga_id', '=', riga_prog.codice_iva.id)])
+            if ids_temp:
+                riga_temp = self.pool.get("account.temp.totaliregiva").browse(cr, uid, ids_temp)[0]
+                # il record è già inserito allora si tratta di una write quindi di un aggiornamento
+                if tipo == 'per': # DATI DEL PERIODO
+                    riga = {
+                            'tot_impon_periodo':riga_temp.tot_impon_periodo + riga_prog.totale_imponibile,
+                            'tot_imposta_periodo': riga_temp.tot_imposta_periodo + riga_prog.totale_imposta,
+
+                            }
+                    
+                else: # progressivo periodo precedenti
+                    riga = {
+                            'tot_impon_progressivo':riga_temp.tot_impon_progressivo + riga_prog.totale_imponibile,
+                            'tot_imposta_progressivo': riga_temp.tot_imposta_periodo + riga_prog.totale_imposta,
+
+                            }
+                ok = self.write(cr, uid, ids_temp, riga)
+
+            else: #deve  fare la create del record
+                
+                if tipo == 'per': # DATI DEL PERIODO
+                    riga = {
+                            'journal_id':journal_id,
+                            'period_id': period_id,
+                            'codice_iva_riga_id': riga_prog.codice_iva.id,
+                            'indetraibile':riga_prog.codice_iva.indetraibile,
+                            'tot_impon_periodo': riga_prog.totale_imponibile,
+                            'tot_imposta_periodo': riga_prog.totale_imposta,
+                            'tot_impon_progressivo': 0.0,
+                            'tot_imposta_progressivo':0.0,
+
+                            }
+                    
+                else: # progressivo periodo precedenti
+                    riga = {
+                            'journal_id':journal_id,
+                            'period_id': period_id,
+                            'codice_iva_riga_id': riga_prog.codice_iva.id,
+                            'indetraibile':riga_prog.codice_iva.indetraibile,
+                            'tot_impon_periodo': 0.0,
+                            'tot_imposta_periodo': 0.0,
+                            'tot_impon_progressivo': riga_prog.totale_imponibile,
+                            'tot_imposta_progressivo':riga_prog.totale_imposta,
+
+                            'tot_impon_progressivo':riga_temp.tot_impon_progressivo + riga_prog.totale_imponibile,
+                            'tot_imposta_progressivo': riga_temp.tot_imposta_periodo + riga_prog.totale_imposta,
+
+                            }
+                id_pro = self.create(cr, uid, riga)
+                
+            
+        return True
+    
+    
+account_temp_totaliregiva()

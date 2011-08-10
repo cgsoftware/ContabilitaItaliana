@@ -1,0 +1,49 @@
+<?xml version="1.0" ?>
+<openerp>
+    <data>
+        <record id="view_stampa_registri_iva" model="ir.ui.view">
+            <field name="name">view.stampa_registri_iva</field>
+            <field name="model">stampa.registri.iva</field>
+            <field name="type">form</field>
+            <field name="arch" type="xml">
+                    <form string="Parametri di Stampa"  >
+                      <field name="data_stampa" colspan="4" />
+                        <field name="journal_id" on_change="ultima_pagina(journal_id, period_id)" colspan="4" />
+                        <field name="period_id" on_change="ultima_pagina(journal_id, period_id)"  colspan="4"/>
+			<field name='ultima_pagina' />
+                        <separator colspan="4"/>
+                        <group col="4" colspan="4">
+                            <button icon="gtk-cancel" special="cancel" string="Cancel" colspan="2"/>
+                            <button icon="gtk-print" name="creaEstampa" string="Stampa" type="object" colspan="2" default_focus="1" />
+                        </group>
+                    </form>
+                
+            </field>
+        </record>
+               
+ 
+        
+        <record id="action_stampa_registri_iva" model="ir.actions.act_window">
+            <field name="name">Stampa Registri Iva</field>
+            <field name="type">ir.actions.act_window</field>
+            <field name="res_model">stampa.registri.iva</field>
+	    <field name="view_mode">form</field>
+        </record>
+	
+        <menuitem action="" 
+		  icon = 'STOCK_OPEN'
+		  name='Iva'
+	          id="menu_operazioni_iva" 
+		  parent="account.menu_finance_periodical_processing" sequence="10" />
+	
+        <menuitem action="action_stampa_registri_iva" 
+		  icon = 'STOCK_EXECUTE'
+		  name='Stampa Registri Iva'
+	          id="menu_stampa_registri_iva" 
+		  parent="menu_operazioni_iva" sequence="1" />
+         
+
+        
+    </data>
+</openerp>
+

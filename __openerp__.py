@@ -31,6 +31,7 @@
                     'security/ir.model.access.csv',
                     'RegistriProgressivi/RegistriProgressivi_view.xml',
                     'DocumentiIva/DocumentiIva_view.xml',
+                    'DocumentiIva/wizard/StampaRegistri.xml',
                     ],
     'website': 'http://www.cgsoftware.it',
     'installable': True,

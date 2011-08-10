@@ -151,6 +151,20 @@
         <menuitem action="action_periodi_progressivi_iva" 
 	          id="menu_periodi_registri" 
 		  parent="account.next_id_27" sequence="4" />
+		  
+		  
+		  
+		  
+          <record model="ir.ui.view" id="account_tax_form2">
+            <field name="name">account.tax.form2"</field>
+            <field name="model">account.tax</field>
+            <field name="inherit_id" ref="account.view_tax_form"/>
+                <field name="arch" type="xml">
+		   <field name="active" position="after">
+		   </field>
+		 </field>
+	       </record>
+		  
 </data>
     
     
