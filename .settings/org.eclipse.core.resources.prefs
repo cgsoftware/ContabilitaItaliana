@@ -1,8 +1,12 @@
-#Wed Aug 10 11:08:17 CEST 2011
+#Thu Aug 11 11:24:14 CEST 2011
 eclipse.preferences.version=1
 encoding//DocumentiIva/DocEmessiRiceuti.py=utf-8
 encoding//DocumentiIva/__init__.py=utf-8
 encoding//DocumentiIva/wizard/StampaRegistri.py=utf-8
+encoding//PrimaNota/PrimaNota.py=utf-8
+encoding//PrimaNota/__init__.py=utf-8
+encoding//PrimaNota/wizard/AutomatismoCont.py=utf-8
+encoding//PrimaNota/wizard/__init__.py=utf-8
 encoding//RegistriProgressivi/RegistriEProgressivi.py=utf-8
 encoding//RegistriProgressivi/__init__.py=utf-8
 encoding/__init__.py=utf-8

@@ -32,6 +32,8 @@
                     'RegistriProgressivi/RegistriProgressivi_view.xml',
                     'DocumentiIva/DocumentiIva_view.xml',
                     'DocumentiIva/wizard/StampaRegistri.xml',
+                    'PrimaNota/wizard/account_automatismi_contabili_view.xml',
+                    'PrimaNota/PrimaNota_view.xml',
                     ],
     'website': 'http://www.cgsoftware.it',
     'installable': True,

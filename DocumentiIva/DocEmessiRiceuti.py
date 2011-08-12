@@ -218,7 +218,7 @@ class account_invoice(osv.osv):
             if partner_auto_ids:
                 # c'è un automatismo personalizzato
                 righe = []
-                import pdb;pdb.set_trace()
+                #import pdb;pdb.set_trace()
                 for riga in self.pool.get("account.partner_autominvoice").browse(cr, uid, partner_auto_ids):
                     righe.append({
                           "product_id":None,
