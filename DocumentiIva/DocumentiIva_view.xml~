@@ -134,7 +134,7 @@
 			     <field colspan="2" name="codice_iva_riga_id"  string="Codice Iva"
 				    context="{'type':parent.type}" domain="[('parent_id','=',False),('company_id', '=', parent.company_id)]"
 				     nolabel="1"  on_change="codice_iva_change(codice_iva_riga_id,invoice_line_tax_id)" />		    
-			      <field name="price_subtotal"  string="Imponibile" attrs="{'invisible':[('parent.tipo_registro','!=','C')]}  />
+			      <field name="price_subtotal"  string="Imponibile" attrs="{'invisible':[('parent.tipo_registro','!=','C')]}"  />
 			      <field name="name" string="Descrizione" colspan="3" />	
 			      <field name='raggruppato' string="Ragr" readonly="1" />
 			      <field name="quantity" invisible="1"/>

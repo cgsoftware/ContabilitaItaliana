@@ -23,12 +23,22 @@
                
  
         
-        <record id="action_stampa_registri_iva" model="ir.actions.act_window">
+ <!--       <record id="action_stampa_registri_iva" model="ir.actions.act_window">
             <field name="name">Stampa Registri Iva</field>
             <field name="type">ir.actions.act_window</field>
             <field name="res_model">stampa.registri.iva</field>
 	    <field name="view_mode">form</field>
+	    
         </record>
+	-->
+	
+	<act_window name='action_stampa_registri_iva'
+	    res_model='stampa.registri.iva'
+	    src_model='account.temp.regiva'
+	    view_mode='form'
+	    target='new'
+	    key2='client_action_multi'
+	      id='view_stampa_registri_iva' />
 	
         <menuitem action="" 
 		  icon = 'STOCK_OPEN'
@@ -36,7 +46,7 @@
 	          id="menu_operazioni_iva" 
 		  parent="account.menu_finance_periodical_processing" sequence="10" />
 	
-        <menuitem action="action_stampa_registri_iva" 
+        <menuitem action="view_stampa_registri_iva" 
 		  icon = 'STOCK_EXECUTE'
 		  name='Stampa Registri Iva'
 	          id="menu_stampa_registri_iva" 

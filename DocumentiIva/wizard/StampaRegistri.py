@@ -7,7 +7,7 @@ import time
 from tools.translate import _
 from osv import osv, fields
 from tools.translate import _
-
+import netsvc
 
 
 class stampa_registri_iva(osv.osv_memory):
@@ -56,19 +56,34 @@ class stampa_registri_iva(osv.osv_memory):
                     }
         
     def creaEstampa(self, cr, uid, ids, data, context=None):
+        if context is None:
+            context = {}
+            
+        data = {}
+        data['ids'] = context.get('active_ids', [])
+        data['model'] = context.get('active_model', 'ir.ui.menu')
+        #data['form'] = self.read(cr, uid, ids, ['dadata', 'adata', 'ord'])[0]
+        #used_context = self._build_contexts(cr, uid, ids, data, context=context)
+        #data['form']['parameters'] = used_context
          
         param = self.browse(cr, uid, ids)[0]
         temp = self.pool.get('account.temp.regiva').crea_temp(cr, uid, param.period_id.id, param.journal_id.id)
         if temp: # sono stati creati i due temporanei ora è possibile stampare.
-            import pdb;pdb.set_trace()
+            
             pass 
             # lancia la stampa e ritorna il numero di pagina  che deve essere salvato
-         #   context = context.copy()
-       #     context['return_pages'] = True
-        #    report = netsvc.LocalService('report.%s' % report_name)
-       #     result, format, pages = report.create(cr, uid, ids, data, context)
-        
-        return  {'type': 'ir.actions.act_window_close'}
+            # context = context.copy()
+            context = {'return_pages': True}
+            report_name = "RegistroIVA"
+            report = netsvc.LocalService('report.%s' % report_name)
+            result, format, pages = report.create(cr, uid, ids, data, context)
+        #{'type': 'ir.actions.act_window_close'}
+        import pdb;pdb.set_trace()
+        return  {'type': 'ir.actions.report.xml',
+                    'report_name': report_name,
+                    'datas': data,
+ 
+                    }
   
     def _print_report(self, cr, uid, ids, data, context=None):
         #import pdb;pdb.set_trace()

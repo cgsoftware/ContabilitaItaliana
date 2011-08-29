@@ -111,10 +111,7 @@ class account_invoice(osv.osv):
                 'default_debit_account_id': fields.related('journal_id', 'default_debit_account_id', string='Conto Costo Standard', type='integer', relation='account.journal'),
      }
     
-    def _get_protocollo(self, cr, uid, context=None):
-        if context is None:
-            context = {}
-        return 1
+
     
     def check_tax_lines(self, cr, uid, inv, compute_taxes, ait_obj):
         if not inv.tax_line:
@@ -172,24 +169,14 @@ class account_invoice(osv.osv):
        return result
    
     def  date_invoice_change(self, cr, uid, ids, journal_id, company_id, data_registrazione, partner_id, type, reference):
-       
+        
         result = {}
+        warning = {}
         period_id = self.pool.get('account.period').search(cr, uid, [('date_start', '<=', data_registrazione), ('date_stop', '>=', data_registrazione), ('company_id', '=', company_id)])[0]
         periodo = self.pool.get('account.period').browse(cr, uid, [period_id])[0]
         fiscalyear = periodo.fiscalyear_id
-        #import pdb;pdb.set_trace() 
-        protocollo_ids = self.pool.get('account.fiscalyear.protocolli').search(cr, uid, [('fiscalyear_id', '=', fiscalyear.id),
-                                                                                        ('registro', '=', journal_id)                                                                                       
-                                                                                        ])
-        if protocollo_ids:
-            protocollo = self.pool.get('account.fiscalyear.protocolli').browse(cr, uid, protocollo_ids)[0].protocollo
-        else:
-            proto = {
-                     'fiscalyear_id':fiscalyear.id,
-                     'registro':journal_id,
-                                          }
-            id_proto = self.pool.get('account.fiscalyear.protocolli').create(cr, uid, proto)
-            protocollo = 0
+        
+        protocollo = self.pool.get('account.fiscalyear.protocolli').get_prot(cr, uid, data_registrazione, journal_id, context=None)['protocollo']       
          
         result = {'value':{
                                  # 'protocollo' : journal.protocollo, ## deve essere preso dao dati annuali account.fiscalyear.protocolli
@@ -203,7 +190,11 @@ class account_invoice(osv.osv):
              result['value'].update({
                                      'account_id':registro.conto_cassa_id.id,
                                      })
-        
+        if registro.tipo_registro == 'A': # tipo registro Acquisti controlla il protocollo
+            #import pdb;pdb.set_trace() 
+             stato = self.pool.get('account.fiscalyear.protocolli').check_sequence(cr, uid, data_registrazione, journal_id, protocollo + 1)
+             if not stato['ok']:
+                 warning = {'title': 'ATTENZIONE !', 'message':stato['warning'] }
         if partner_id:
             if 'invoice' in type:
                     if registro.tipo_registro == 'C':
@@ -255,9 +246,31 @@ class account_invoice(osv.osv):
                                             })
             else:
                     result = {'value':{"name":Descrizione , "invoice_line":righe, }}
-            
-        return  result   
+        res = {'value': result['value'], 'warning': warning} 
+        return  res   
     
+    def riassegna_protocolli(self, cr, uid, anno_id, registro_id):
+        import pdb;pdb.set_trace() # SCRITTA MA DA TESTARE
+        
+        fiscalyear_obj = self.pool.get('account.fiscalyear').browse(cr, uid, anno_id)
+        cerca = [('journal_id', '=', registro_id),
+                 ('data_registrazione', '>=', fiscalyear_obj.date_start),
+                 ('data_registrazione', '<=', fiscalyear_obj.date_stop),
+                 ]
+        invoice_ids = self.pool.get('account.invoice').search(cr, uid, cerca, order='data_registrazione')
+        if invoice_ids:
+            protocollo = 0
+            for inv_id in invoice_ids:
+                protocollo += 1
+                self.write(cr, uid, [inv_id], {'protocollo':protocollo})
+            data_reg = self.browse(cr, uid, [invoice_ids[-1]])[0].data_registrazione
+            riga = {
+                    'protocollo':protocollo,
+                    'data_registrazione':data_reg,
+                    }
+            id_prot = self.pool.get('account.fiscalyear.protocolli').get_prot(cr, uid, data_reg, registro_id, context=None)['id']
+        ok = True
+        return ok 
 
 
 
@@ -448,6 +461,20 @@ class account_invoice(osv.osv):
                         res['fields'][field]['selection'] = journal_select
                 
         
+        return res
+    
+    def create(self, cr, uid, vals, context=None):
+        #import pdb;pdb.set_trace()
+        ok = self.pool.get('account.fiscalyear.protocolli').agg_prot(cr, uid, vals['data_registrazione'], vals['journal_id'], vals['protocollo'], context)
+        res = super(account_invoice, self).create(cr, uid, vals, context=context)
+        return res
+    
+    def write(self, cr, uid, ids, vals, context=None):
+        #import pdb;pdb.set_trace()
+        if vals.get('data_registrazione', False):
+            
+            ok = self.pool.get('account.fiscalyear.protocolli').agg_prot(cr, uid, vals['data_registrazione'], vals['journal_id'], vals['protocollo'], context)
+        res = super(account_invoice, self).write(cr, uid, ids, vals, context=context)
         return res
         
 account_invoice()        

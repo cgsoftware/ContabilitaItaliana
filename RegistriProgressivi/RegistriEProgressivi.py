@@ -177,6 +177,83 @@ class account_fiscalyear_protocolli(osv.osv):
                 'data_registrazione': fields.date('Data Registrazione', required=False,),
                }
     
+    def check_sequence(self, cr, uid, data_reg, registro, protocollo, context=None):
+        
+        ok = True
+        warning = ''
+        #import pdb;pdb.set_trace()
+        old_prot = self.get_prot(cr, uid, data_reg, registro)
+        if old_prot['protocollo'] < protocollo and old_prot['data_registrazione'] > data_reg:
+            # protocollo maggiore e data di registrazione inferiore all'ultimo protocollo inserito
+            ok = False
+            warning = 'Protocollo Maggiore e Data di Registrazione Inferiore all ultimo protocollo inserito'
+
+           
+        fiscalyear = self.get_fiscal_year(cr, uid, data_reg)
+        fiscalyear_obj = self.pool.get('account.fiscalyear').browse(cr, uid, fiscalyear)
+        cerca = [('journal_id', '=', registro),
+                 ('data_registrazione', '>=', fiscalyear_obj.date_start),
+                 ('data_registrazione', '<=', fiscalyear_obj.date_stop),
+                 ('protocollo', '=', protocollo)
+                 ]
+        invoice_ids = self.pool.get('account.invoice').search(cr, uid, cerca)
+        if invoice_ids:
+            ok = False
+            # protocollo protocollo esistente registrazione del 
+            registrazione = self.pool.get('account.invoice').browse(cr, uid, invoice_ids)[0]
+            warning = 'protocollo esistente alla registrazione ' + registrazione.name
+        return {'ok':ok, 'warning':warning}
+    
+    def get_prot(self, cr, uid, data_reg, registro, context=None):
+        #import pdb;pdb.set_trace() 
+        fiscalyear = self.get_fiscal_year(cr, uid, data_reg)
+        id_prot = self.search(cr, uid, [('fiscalyear_id', '=', fiscalyear), ('registro', '=', registro)])
+        if id_prot:
+            protocollo = { 
+                         'protocollo':self.browse(cr, uid, id_prot)[0].protocollo,
+                         'data_registrazione':self.browse(cr, uid, id_prot)[0].data_registrazione,
+                         'id':id_prot[0],
+                        }
+        else:
+            # non esiste un record del protocollo lo crea
+            riga_prot = {
+                         'fiscalyear_id':fiscalyear,
+                         'registro':registro,
+                         'protocollo':0,
+                         'data_registrazione':data_reg,
+                         }
+            id = self.create(cr, uid, riga_prot)
+            protocollo = { 
+                         'protocollo':self.browse(cr, uid, id).protocollo,
+                         'data_registrazione':self.browse(cr, uid, id).data_registrazione,
+                         'id':id,
+                        }
+        return protocollo
+    
+    def get_fiscal_year(self, cr, uid, data_reg, context=None):
+        #import pdb;pdb.set_trace() 
+        period_id = self.pool.get('account.period').search(cr, uid, [('date_start', '<=', data_reg), ('date_stop', '>=', data_reg)])[0]
+        periodo = self.pool.get('account.period').browse(cr, uid, [period_id])[0]
+        fiscalyear = periodo.fiscalyear_id.id
+
+        return fiscalyear
+    
+    def agg_prot(self, cr, uid, data_reg, registro, protocollo, context=None):
+        #import pdb;pdb.set_trace() 
+        prot_list = self.get_prot(cr, uid, data_reg, registro, context)
+        if prot_list['protocollo'] < protocollo and prot_list['data_registrazione'] <= data_reg:
+            riga = {
+                    'protocollo':protocollo,
+                    'data_registrazione':data_reg,
+                    }
+            ok = self.write(cr, uid, [prot_list['id']], riga)
+            
+        return True
+    
+    def write(self, cr, uid, ids, vals, context=None):
+        
+         res = super(account_fiscalyear_protocolli, self).write(cr, uid, ids, vals, context=context)
+         return res
 
 account_fiscalyear_protocolli()
 
